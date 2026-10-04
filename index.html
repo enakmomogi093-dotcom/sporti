@@ -1,0 +1,531 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Musik Player</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎧</text></svg>">
+<style>
+:root{--bg:#000;--panel:#121212;--card:#181818;--hover:#2a2a2a;--text:#fff;--muted:#b3b3b3;--green:#1ed760}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;touch-action:manipulation;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent}
+body{position:fixed;inset:0;background:var(--bg);color:var(--text);font-family:"Circular Std","Segoe UI",Helvetica,Arial,sans-serif;overflow:hidden;overscroll-behavior:none;user-select:none;-webkit-user-select:none}
+input,textarea{user-select:text;-webkit-user-select:text;font-size:16px}
+.panel{overscroll-behavior:contain}
+button{background:none;border:0;color:inherit;cursor:pointer;font:inherit}
+button:focus-visible,input:focus-visible{outline:2px solid var(--green);outline-offset:2px}
+.app{display:grid;grid-template-columns:260px 1fr 340px;grid-template-rows:1fr 88px;gap:8px;height:100%;padding:8px;padding-bottom:max(8px,env(safe-area-inset-bottom))}
+.panel{background:var(--panel);border-radius:10px;overflow:auto}
+.side{padding:20px 12px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:800;font-size:20px;padding:0 12px 20px}
+.logo i{width:32px;height:32px;border-radius:50%;background:var(--green);display:grid;place-items:center;color:#000;font-style:normal}
+.nav button{display:block;width:100%;text-align:left;padding:12px;border-radius:6px;color:var(--muted);font-weight:700}
+.nav button.on,.nav button:hover,.nav a:hover{color:#fff}
+.nav a{display:block;padding:12px;border-radius:6px;color:var(--muted);font-weight:700;text-decoration:none}
+.tabs a{display:grid;place-items:center;color:var(--muted);font-weight:700;font-size:12px;text-decoration:none}
+.dev{margin:24px 12px 0;padding:14px;border-radius:10px;background:var(--card);font-size:13px;color:var(--muted);line-height:1.5}
+.dev b{color:#fff;display:block;font-size:15px}
+.main{background:linear-gradient(#3a2a2a 0,var(--panel) 280px)}
+.top{position:sticky;top:0;z-index:5;padding:16px 24px;background:rgba(18,18,18,.6);backdrop-filter:blur(12px)}
+.search{display:flex;align-items:center;gap:10px;background:#242424;border-radius:500px;padding:0 18px;max-width:420px;height:46px;border:2px solid transparent}
+.search:focus-within{border-color:#fff}
+.search input{flex:1;background:none;border:0;color:#fff;font-size:15px;height:100%;outline:0}
+.top{display:flex;gap:10px;align-items:center}
+.top .search{flex:1}
+.up{white-space:nowrap;background:#fff;color:#000;font-weight:700;border-radius:30px;padding:0 16px;height:44px;font-size:14px}
+.up:hover{transform:scale(1.04)}
+.note{display:inline-block;margin-top:8px;font-size:12px;color:var(--muted);background:#2a2a2a;border-radius:20px;padding:4px 10px}
+#ytBox{position:fixed;right:12px;bottom:104px;width:220px;height:124px;border-radius:10px;overflow:hidden;z-index:30;box-shadow:0 8px 30px #000a;background:#000}
+#ytBox[hidden]{display:none}
+.up{padding:0 14px}
+@media(max-width:980px){#ytBox{bottom:140px}.top{gap:6px}.up{padding:0 10px;font-size:13px}}
+.sec{padding:8px 24px 24px}
+h2{font-size:24px;margin:12px 0 14px}
+.row{display:grid;grid-template-columns:36px 1fr auto;gap:14px;align-items:center;padding:8px 12px;border-radius:6px;cursor:pointer;width:100%;text-align:left}
+.row:hover{background:var(--hover)}
+.row img{width:48px;height:48px;border-radius:4px;object-fit:cover;grid-column:1;grid-row:1}
+.row{grid-template-columns:48px 1fr auto}
+.row.on .t{color:var(--green)}
+.t{font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.a{color:var(--muted);font-size:14px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.d{color:var(--muted);font-size:13px}
+.hero{display:flex;gap:20px;align-items:flex-end;padding:24px;}
+.hero img{width:180px;height:180px;border-radius:6px;box-shadow:0 8px 40px rgba(0,0,0,.6)}
+.hero h1{font-size:clamp(28px,5vw,64px);line-height:1.05;letter-spacing:-1px}
+.hero p{color:var(--muted);margin-top:10px}
+.pbtn{width:56px;height:56px;border-radius:50%;background:var(--green);color:#000;display:grid;place-items:center;margin:8px 0 16px 24px}
+.pbtn:hover{transform:scale(1.06)}
+.np{padding:16px}
+.np img{width:100%;aspect-ratio:1;border-radius:8px;object-fit:cover;margin-bottom:16px}
+.np h3{font-size:22px}
+.lyr{margin-top:20px;background:var(--card);border-radius:10px;padding:16px;max-height:340px;overflow:auto;scroll-behavior:smooth}
+.lyr p{font-size:20px;font-weight:700;color:#7a7a7a;padding:6px 0;line-height:1.3;transition:color .2s}
+.lyr{position:relative}
+.lyr p{transition:color .35s,transform .35s;transform-origin:left center}
+.lyr p.now{color:#fff;transform:scale(1.05)}
+.lyr.sync::before,.lyr.sync::after{content:"";display:block;height:42%}
+.lyr .info{font-size:14px;font-weight:400;color:var(--muted)}
+.lyr textarea{width:100%;min-height:120px;background:#242424;border:0;border-radius:6px;color:#fff;padding:10px;margin-top:10px;font:inherit;font-size:14px;resize:vertical}
+.bar{grid-column:1/-1;display:grid;grid-template-columns:1fr 2fr 1fr;align-items:center;padding:0 12px;gap:12px}
+.bi{display:flex;align-items:center;gap:12px;min-width:0}
+.bi img{width:56px;height:56px;border-radius:4px;object-fit:cover}
+.ctrl{display:flex;flex-direction:column;align-items:center;gap:8px}
+.cb{display:flex;align-items:center;gap:20px}
+.cb button{color:var(--muted);display:grid;place-items:center}
+.cb button:hover,.cb button.on{color:#fff}
+.cb button.on{color:var(--green)}
+.cb .play{width:36px;height:36px;border-radius:50%;background:#fff;color:#000}
+.cb .play:hover{transform:scale(1.06);color:#000}
+.prog{display:flex;align-items:center;gap:8px;width:100%;max-width:560px;font-size:12px;color:var(--muted)}
+input[type=range]{-webkit-appearance:none;appearance:none;flex:1;height:4px;border-radius:2px;background:linear-gradient(to right,#fff var(--p,0%),#4d4d4d var(--p,0%));cursor:pointer}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;background:#fff;opacity:0}
+input[type=range]:hover::-webkit-slider-thumb{opacity:1}
+input[type=range]:hover{background:linear-gradient(to right,var(--green) var(--p,0%),#4d4d4d var(--p,0%))}
+.vol{display:flex;align-items:center;gap:8px;justify-content:flex-end}
+.vol input{flex:none;width:100px}
+.empty{color:var(--muted);padding:24px}
+.tabs{display:none}
+.bar{position:relative}
+#mini{display:none}
+@media(max-width:980px){
+ .app{height:100dvh;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) 64px 56px;gap:6px;padding:6px;padding-top:max(6px,env(safe-area-inset-top))}
+ .side,.vol{display:none}
+ .np{display:none}
+ .app.show-np .main{display:none}
+ .app.show-np .np{display:block;grid-row:1;background:linear-gradient(#4a2a2a,var(--panel) 60%)}
+ .bar{grid-column:1;grid-row:2;grid-template-columns:minmax(0,1fr) auto;background:#3a2626;border-radius:10px;padding:0 8px 0 8px;overflow:hidden}
+ .bi img{width:44px;height:44px}
+ .ctrl .prog,.cb .hid,#prev{display:none}
+ .cb .play{width:40px;height:40px}
+ #mini{display:block;position:absolute;left:8px;right:8px;bottom:0;height:2px;background:rgba(255,255,255,.25);border-radius:2px}
+ #mini i{display:block;height:100%;width:0;background:#fff;border-radius:2px}
+ .tabs{display:grid;grid-template-columns:repeat(3,1fr);grid-column:1;grid-row:3;background:var(--panel);border-radius:10px;padding-bottom:env(safe-area-inset-bottom)}
+ .tabs button{color:var(--muted);font-weight:700;font-size:12px}.tabs button.on{color:#fff}
+ .main{background:linear-gradient(#3a2a2a 0,var(--panel) 220px)}
+ .top{padding:12px}.search{max-width:none;height:44px}
+ .hero{flex-direction:column;align-items:center;text-align:center;padding:12px 16px 0;gap:14px}
+ .hero img{width:150px;height:150px}.hero h1{font-size:26px;word-break:break-word}
+ .pbtn{margin:-8px 16px 8px auto;width:52px;height:52px}
+ .sec{padding:0 6px 16px}h2{font-size:20px;margin:0 8px 8px}
+ .row{padding:8px}.row img{width:46px;height:46px}
+ .np{padding:20px 20px 12px}
+ .np img{width:min(78%,300px);display:block;margin:0 auto 18px}
+ .lyr{max-height:none;height:calc(100% - 0px);min-height:200px}.np{display:none}
+ .app.show-np .np{display:flex;flex-direction:column}
+ .app.show-np .lyr{flex:1;max-height:none}
+ .lyr p{font-size:22px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+
+/* ===== Layar pembuka: pintu ===== */
+#gate{position:fixed;inset:0;z-index:100;width:100%;height:100dvh;display:grid;place-items:center;background:radial-gradient(ellipse at 50% 45%,#16120f 0,#050403 70%);color:#e8dcc0;overflow:hidden;transition:opacity .9s ease,transform 1.1s ease;font-family:"Cinzel",Georgia,serif}
+#gate.out{opacity:0;transform:scale(1.5);pointer-events:none}
+.door{position:relative;height:min(68dvh,560px);aspect-ratio:.62;perspective:1100px;filter:drop-shadow(0 20px 40px #000)}
+.door.shake{animation:shake .12s 6}
+@keyframes shake{50%{transform:translateX(2px)}}
+.hall{position:absolute;inset:0;background:radial-gradient(ellipse at 50% 55%,#4a3520 0,#120d08 38%,#030201 75%);border:4px solid #0c0a08}
+.hall::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#000 0,transparent 30%,transparent 70%,#000 100%)}
+.leaf{position:absolute;top:0;width:50%;height:100%;transition:transform 1.5s cubic-bezier(.5,0,.2,1);
+ background:radial-gradient(circle at 7px 7px,#7a6850 0 1.4px,transparent 2px) 0 0/20px 20px,linear-gradient(90deg,#15110e,#201b17 50%,#12100d);
+ border:3px solid #090706;box-shadow:inset 0 0 0 6px #191512,inset 0 0 34px #000}
+.leaf.l{left:0;transform-origin:left center;border-right-width:1px}
+.leaf.r{right:0;transform-origin:right center;border-left-width:1px}
+.leaf::before,.leaf::after{content:"";position:absolute;left:13%;right:13%;border:2px solid #0a0807;border-radius:3px;box-shadow:inset 0 0 18px #000,0 1px 0 #2c2620}
+.leaf::before{top:7%;height:38%}.leaf::after{top:52%;height:40%}
+.knob{position:absolute;top:50%;width:7px;height:17%;border-radius:4px;background:linear-gradient(90deg,#f0d58a,#7a5d22);box-shadow:0 2px 6px #000;z-index:2}
+.l .knob{right:9px}.r .knob{left:9px}
+.open .leaf.l{transform:rotateY(-108deg)}
+.open .leaf.r{transform:rotateY(22deg)}
+.sign{position:absolute;left:50%;top:33%;width:74%;transform:translateX(-50%);transform-origin:50% -34%;z-index:5;text-align:center;animation:sway 3.6s ease-in-out infinite}
+.open .sign{animation:swing 1.4s ease-out forwards}
+@keyframes sway{50%{transform:translateX(-50%) rotate(1.6deg)}0%,100%{transform:translateX(-50%) rotate(-1.6deg)}}
+@keyframes swing{0%{transform:translateX(-50%) rotate(0)}30%{transform:translateX(-50%) rotate(-16deg)}100%{transform:translateX(-50%) rotate(-5deg) translateX(-90%);opacity:0}}
+.sign::before,.sign::after{content:"";position:absolute;top:-34%;height:36%;width:3px;background:repeating-linear-gradient(#a58b62 0 5px,#2f2619 5px 9px)}
+.sign::before{left:14%;transform:rotate(14deg);transform-origin:bottom}.sign::after{right:14%;transform:rotate(-14deg);transform-origin:bottom}
+.plate{padding:14% 6% 12%;border-radius:16px;background:linear-gradient(#2d2621,#181310);border:3px solid #8e7650;box-shadow:inset 0 0 0 4px #1a1511,inset 0 0 0 5px #5d4a31,0 10px 24px #000c;line-height:1.15}
+.plate small{display:block;font-size:clamp(14px,4.6vw,22px);color:#cdbd98;letter-spacing:1px}
+.plate b{display:block;font-size:clamp(22px,8vw,40px);color:#f1e6c8;text-shadow:0 0 14px #ffd68a55;margin-top:4px;overflow-wrap:anywhere}
+.tap{position:absolute;bottom:max(36px,env(safe-area-inset-bottom));left:0;right:0;text-align:center;font-size:12px;letter-spacing:6px;color:#8d8575;animation:pulse 1.8s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.25}}
+.open ~ .tap{display:none}
+.door img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;border-radius:6px;transform:scale(1);transition:opacity 1.5s ease,transform 2.4s cubic-bezier(.4,0,.2,1)}
+.door img[hidden]{display:none}
+#imgOpen{opacity:0}
+.photo .hall,.photo .leaf,.photo .sign{display:none}
+.photo .door{width:min(94vw,520px);height:min(80dvh,780px);aspect-ratio:auto}
+.photo .door::after{content:"";position:absolute;inset:0;border-radius:6px;box-shadow:inset 0 0 90px 34px #000;pointer-events:none;z-index:6}
+.photo .open #imgOpen{opacity:1;transform:scale(1.14)}
+.photo .open #imgClosed{transform:scale(1.14)}
+@media(prefers-reduced-motion:reduce){.sign,.tap,.door.shake{animation:none!important}.leaf{transition-duration:.3s}}
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+<button id="gate" aria-label="Ketuk pintu untuk masuk">
+ <div class="door" id="door">
+  <img id="imgClosed" alt="" hidden><img id="imgOpen" alt="" hidden>
+  <div class="hall"></div>
+  <div class="leaf l"><i class="knob"></i></div>
+  <div class="leaf r"><i class="knob"></i></div>
+  <div class="sign"><div class="plate"><small>Welcome To</small><b id="gateName"></b></div></div>
+ </div>
+ <div class="tap">KETUK PINTU</div>
+</button>
+<div class="app" id="app">
+ <aside class="panel side">
+  <div class="logo"><i>♪</i>Musik Player</div>
+  <nav class="nav">
+   <button class="on" data-q="nabil fvndy">Beranda</button>
+   <button data-q="dj pikir keri">Pikir Keri</button>
+   <button data-q="dj viral">DJ Viral</button>
+   <button data-q="indonesia pop">Pop Indonesia</button>
+   <a href="tools/">🧰 Tools</a>
+  </nav>
+  <div class="dev"><span>Dibuat oleh</span><b id="devName"></b><span id="devNote"></span></div>
+ </aside>
+
+ <main class="panel main">
+  <div class="top"><label class="search"><svg width="20" height="20" viewBox="0 0 24 24" fill="#b3b3b3"><path d="M10.5 3a7.5 7.5 0 015.9 12.1l4.3 4.3-1.4 1.4-4.3-4.3A7.5 7.5 0 1110.5 3zm0 2a5.5 5.5 0 100 11 5.5 5.5 0 000-11z"/></svg><input id="q" type="search" placeholder="Cari lagu atau artis" autocomplete="off"></label><button class="up" id="upBtn">+ MP3</button><button class="up" id="ytBtn">+ YT</button><input type="file" id="upFile" accept="audio/*" hidden></div>
+  <div class="hero" id="hero"></div>
+  <button class="pbtn" id="playAll" aria-label="Putar semua"><svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg></button>
+  <div class="sec"><h2>Lagu</h2><div id="list"><p class="empty">Memuat…</p></div></div>
+ </main>
+
+ <aside class="panel np" id="np">
+  <img id="npImg" alt="Cover" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect width='10' height='10' fill='%23282828'/></svg>">
+  <h3 id="npT">Pilih lagu</h3><div class="a" id="npA">—</div><span class="note" id="npNote" hidden></span>
+  <div class="lyr" id="lyr"><p class="info">Lirik muncul di sini saat lagu diputar.</p></div>
+ </aside>
+
+ <footer class="bar">
+  <div class="bi"><img id="bImg" alt="" src="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect width='10' height='10' fill='%23282828'/></svg>"><div style="min-width:0"><div class="t" id="bT">Belum ada lagu</div><div class="a" id="bA"></div></div></div>
+  <div class="ctrl">
+   <div class="cb">
+    <button id="shuf" class="hid" aria-label="Acak"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17 3l4 4-4 4V8h-2.6l-3 4.2L14.4 16H17v-3l4 4-4 4v-3h-3.6l-3.4-4.7L6.6 17H3v-2h2.6l3-4.2L5.6 7H3V5h3.6L10 9.700 13.4 5H17z"/></svg></button>
+    <button id="prev" aria-label="Sebelumnya"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zm3 7l11 7V5z"/></svg></button>
+    <button id="play" class="play" aria-label="Putar"></button>
+    <button id="next" aria-label="Berikutnya"><svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM4 19l11-7L4 5z"/></svg></button>
+    <button id="rep" class="hid" aria-label="Ulangi"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7h10v3l4-4-4-4v3H5v6h2zm10 10H7v-3l-4 4 4 4v-3h12v-6h-2z"/></svg></button>
+   </div>
+   <div class="prog"><span id="cur">0:00</span><input id="seek" type="range" min="0" max="100" value="0" aria-label="Posisi lagu"><span id="dur">0:00</span></div>
+  </div>
+  <div id="mini"><i id="miniFill"></i></div>
+  <div class="vol"><svg width="18" height="18" viewBox="0 0 24 24" fill="#b3b3b3"><path d="M3 9v6h4l5 5V4L7 9zm13.500 3A4.500 4.500 0 0014 8v8a4.500 4.500 0 002.500-4z"/></svg><input id="vol" type="range" min="0" max="100" value="80" aria-label="Volume"></div>
+ </footer>
+
+ <nav class="tabs"><button class="on" id="tabHome">Beranda</button><button id="tabNp">Sedang diputar</button><a href="tools/">Tools</a></nav>
+</div>
+
+<div id="ytBox" hidden><div id="ytFrame"></div></div>
+<script>
+/* ============ KONFIGURASI (ubah di sini) ============ */
+const CONFIG = {
+  devName: "Nama Kamu",                 // <- ganti nama developer
+  devNote: "Web player • Vercel Ready", // <- teks kecil di bawah nama
+  welcomeName: "Musik Player",          // <- nama di papan pintu
+  gateImages: ["assets/door-closed.jpg", "assets/door-open.jpg"], // gambar pintu (hasil AI)
+  defaultQuery: "nabil fvndy",
+  ytApiKey: ""                          // <- opsional: isi API key YouTube agar semua lagu auto full
+};
+/* ====================================================== */
+const $ = id => document.getElementById(id);
+const realAudio = new Audio(); realAudio.volume = .8; let audio = realAudio;
+const ICON = {
+  play:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4l13 8-13 8z"/></svg>',
+  pause:'<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 4h4v16H6zm8 0h4v16h-4z"/></svg>'
+};
+let estN = 0, userScroll = 0, tracks = [], idx = -1, shuffle = false, repeat = false, lrc = [], lrcIdx = -1;
+
+$("devName").textContent = CONFIG.devName;
+$("devNote").textContent = CONFIG.devNote;
+$("play").innerHTML = ICON.play;
+
+const fmt = s => isFinite(s) ? Math.floor(s/60) + ":" + String(Math.floor(s%60)).padStart(2,"0") : "0:00";
+const PH = "data:image/svg+xml," + encodeURIComponent("<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect width='10' height='10' fill='#282828'/></svg>");
+const art = (u, n=600) => u ? u.replace("100x100", n + "x" + n) : PH;
+let localTracks = [];
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const fill = el => el.style.setProperty("--p", (el.value / el.max * 100) + "%");
+
+/* ---------- Pencarian (iTunes Search API: gratis, tanpa API key) ---------- */
+function jsonp(url){
+  return new Promise((res, rej) => {
+    const cb = "cb" + Date.now() + Math.floor(Math.random()*999);
+    const s = document.createElement("script");
+    const t = setTimeout(() => { s.remove(); delete window[cb]; rej(new Error("timeout")); }, 10000);
+    window[cb] = d => { clearTimeout(t); s.remove(); delete window[cb]; res(d); };
+    s.onerror = () => { clearTimeout(t); rej(new Error("gagal")); };
+    s.src = url + "&callback=" + cb; document.head.appendChild(s);
+  });
+}
+async function search(term){
+  $("list").innerHTML = '<p class="empty">Memuat…</p>';
+  try{
+    const d = await jsonp("https://itunes.apple.com/search?media=music&entity=song&limit=30&term=" + encodeURIComponent(term));
+    tracks = [...localTracks, ...d.results.filter(r => r.previewUrl)];
+    render();
+  }catch(e){ $("list").innerHTML = '<p class="empty">Gagal memuat. Periksa koneksi internet lalu coba lagi.</p>'; }
+}
+function render(){
+  if(!tracks.length){ $("list").innerHTML = '<p class="empty">Tidak ada hasil. Coba kata kunci lain.</p>'; $("hero").innerHTML=""; return; }
+  const f = tracks[0];
+  $("hero").innerHTML = `<img src="${art(f.artworkUrl100,400)}" alt=""><div><p>Hasil pencarian</p><h1>${esc($("q").value || CONFIG.defaultQuery)}</h1><p>${tracks.length} lagu</p></div>`;
+  $("list").innerHTML = tracks.map((t,i) => `<button class="row ${i===idx?'on':''}" data-i="${i}"><img src="${art(t.artworkUrl60||t.artworkUrl100,60)}" alt="" loading="lazy"><div style="min-width:0"><div class="t">${esc(t.trackName)}</div><div class="a">${esc(t.artistName)}</div></div><span class="d">${t.local || t.yt ? "Full" : fmt((t.trackTimeMillis||0)/1000)}</span></button>`).join("");
+}
+$("list").addEventListener("click", e => { const r = e.target.closest(".row"); if(r) load(+r.dataset.i); });
+
+/* ---------- Pemutar ---------- */
+function load(i){
+  idx = i; const t = tracks[i]; if(!t) return;
+  playTrack(t);
+  $("bT").textContent = $("npT").textContent = t.trackName;
+  $("bA").textContent = $("npA").textContent = t.artistName;
+  $("bImg").src = art(t.artworkUrl100, 120); $("npImg").src = art(t.artworkUrl100, 600);
+  document.title = t.trackName + " • " + t.artistName;
+  document.querySelectorAll(".row").forEach(r => r.classList.toggle("on", +r.dataset.i === i));
+  if("mediaSession" in navigator) navigator.mediaSession.metadata = new MediaMetadata({title:t.trackName, artist:t.artistName, artwork:[{src:art(t.artworkUrl100,512),sizes:"512x512"}]});
+  const nt = $("npNote");
+  nt.hidden = false;
+  note(t);
+  loadLyrics(t);
+}
+function step(d){
+  if(!tracks.length) return;
+  const n = shuffle ? Math.floor(Math.random()*tracks.length) : (idx + d + tracks.length) % tracks.length;
+  load(n);
+}
+$("play").onclick = () => { if(idx < 0) return tracks.length && load(0); audio.paused ? audio.play() : audio.pause(); };
+$("playAll").onclick = () => tracks.length && load(0);
+$("next").onclick = () => step(1); $("prev").onclick = () => audio.currentTime > 3 ? audio.currentTime = 0 : step(-1);
+$("shuf").onclick = e => { shuffle = !shuffle; e.currentTarget.classList.toggle("on", shuffle); };
+$("rep").onclick = e => { repeat = !repeat; e.currentTarget.classList.toggle("on", repeat); };
+audio.onplay = () => $("play").innerHTML = ICON.pause;
+audio.onpause = () => $("play").innerHTML = ICON.play;
+audio.onended = () => repeat ? (audio.currentTime = 0, audio.play()) : step(1);
+audio.onloadedmetadata = () => { $("dur").textContent = fmt(audio.duration); $("seek").max = audio.duration; };
+audio.ontimeupdate = () => {
+  $("cur").textContent = fmt(audio.currentTime); $("seek").value = audio.currentTime; fill($("seek")); syncLyrics();
+  $("miniFill").style.width = (audio.currentTime / (audio.duration || 1) * 100) + "%";
+};
+/* blok zoom (pinch & double-tap) di iOS/Android */
+["gesturestart","gesturechange","gestureend"].forEach(ev => document.addEventListener(ev, e => e.preventDefault()));
+document.addEventListener("touchmove", e => { if(e.touches.length > 1) e.preventDefault(); }, {passive:false});
+let lastTap = 0;
+document.addEventListener("touchend", e => { const n = Date.now(); if(n - lastTap < 300) e.preventDefault(); lastTap = n; }, {passive:false});
+$("seek").oninput = e => { audio.currentTime = e.target.value; fill(e.target); };
+$("vol").oninput = e => { audio.volume = e.target.value / 100; fill(e.target); }; fill($("vol"));
+
+/* ---------- Lirik (LRCLIB: gratis, tanpa API key) ---------- */
+function parseLRC(txt){
+  const out = [];
+  txt.split("\n").forEach(l => {
+    const m = l.match(/^\[(\d+):(\d+(?:\.\d+)?)\](.*)/);
+    if(m) out.push({t: +m[1]*60 + +m[2], s: m[3].trim()});
+  });
+  return out;
+}
+const enc = encodeURIComponent;
+const clean = x => x.replace(/\(.*?\)|\[.*?\]/g, "").replace(/\b(official|video|lyrics?|lirik|audio|music|mv|remix|dj|slowed|reverb|viral|tiktok|full bass|cover)\b/gi, "").replace(/[|\-–_]+/g, " ").replace(/\s+/g, " ").trim();
+async function findLyrics(t){
+  const ti = clean(t.trackName), ar = clean(t.artistName);
+  const qs = ["track_name=" + enc(t.trackName) + "&artist_name=" + enc(t.artistName), "track_name=" + enc(ti) + "&artist_name=" + enc(ar), "q=" + enc(ti + " " + ar), "q=" + enc(ti)];
+  for(const q of qs){
+    try{
+      const d = await (await fetch("https://lrclib.net/api/search?" + q)).json();
+      const hit = d.find(x => x.syncedLyrics) || d.find(x => x.plainLyrics);
+      if(hit) return hit;
+    }catch(e){}
+  }
+  try{
+    const d = await (await fetch("https://api.lyrics.ovh/v1/" + enc(ar) + "/" + enc(ti))).json();
+    if(d.lyrics) return {plainLyrics: d.lyrics};
+  }catch(e){}
+  return null;
+}
+async function loadLyrics(t){
+  const box = $("lyr"); lrc = []; lrcIdx = -1; estN = 0; box.classList.remove("sync"); box.scrollTop = 0;
+  box.innerHTML = '<p class="info">Mencari lirik…</p>';
+  const key = "lyr:" + t.trackId;
+  const saved = localStorage.getItem(key);
+  if(saved){ return showPlain(saved, t, true); }
+  try{
+    const hit = await findLyrics(t);
+    if(hit && hit.syncedLyrics){
+      lrc = parseLRC(hit.syncedLyrics);
+      box.innerHTML = lrc.map((l,i) => `<p data-i="${i}">${esc(l.s) || "♪"}</p>`).join("");
+      box.classList.add("sync");
+      box.querySelectorAll("p").forEach(p => p.onclick = () => audio.currentTime = lrc[+p.dataset.i].t);
+      return;
+    }
+    if(hit && hit.plainLyrics) return showPlain(hit.plainLyrics, t);
+  }catch(e){}
+  noLyrics(t);
+}
+function showPlain(txt, t, mine){
+  const lines = txt.split("\n").map(x => x.trim()).filter(Boolean);
+  const box = $("lyr"); lrc = []; lrcIdx = -1; estN = lines.length; box.classList.add("sync");
+  box.innerHTML = lines.map((l, i) => `<p data-i="${i}">${esc(l)}</p>`).join("") + (mine ? '<button class="d" id="clr">Hapus lirik tersimpan</button>' : "");
+  if(mine) $("clr").onclick = () => { localStorage.removeItem("lyr:" + t.trackId); noLyrics(t); };
+}
+function noLyrics(t){
+  estN = 0; $("lyr").classList.remove("sync");
+  $("lyr").innerHTML = '<p class="info">Lirik belum tersedia untuk lagu ini. Kamu bisa tempel liriknya sendiri:</p><textarea id="ta" placeholder="Tempel lirik di sini"></textarea><button class="pbtn" style="margin:10px 0 0;width:auto;height:auto;padding:8px 20px;border-radius:30px;font-weight:700" id="sv">Simpan</button>';
+  $("sv").onclick = () => { const v = $("ta").value.trim(); if(v){ localStorage.setItem("lyr:" + t.trackId, v); showPlain(v, t, true); } };
+}
+function syncLyrics(){
+  const ct = tracks[idx]; let i = -1;
+  if(lrc.length){
+    for(let k = 0; k < lrc.length; k++){ if(lrc[k].t <= audio.currentTime + .2) i = k; else break; }
+  }else if(estN && ct && (ct.yt || ct.local) && audio.duration > 20){
+    const intro = Math.min(12, audio.duration * .06), span = audio.duration - intro - Math.min(10, audio.duration * .05);
+    i = audio.currentTime < intro ? -1 : Math.min(estN - 1, Math.floor((audio.currentTime - intro) / (span / estN)));
+  }else return;
+  if(i === lrcIdx) return; lrcIdx = i;
+  const box = $("lyr"), ps = box.querySelectorAll("p");
+  ps.forEach((p, k) => p.classList.toggle("now", k === i));
+  if(ps[i] && Date.now() - userScroll > 3000)
+    box.scrollTo({top: ps[i].offsetTop - box.clientHeight / 2 + ps[i].offsetHeight / 2, behavior: "smooth"});
+}
+['touchstart','wheel'].forEach(ev => $("lyr").addEventListener(ev, () => userScroll = Date.now(), {passive:true}));
+
+/* ---------- Mesin pemutar: preview iTunes / YouTube penuh ---------- */
+const handlers = {onplay:audio.onplay, onpause:audio.onpause, onended:audio.onended, onloadedmetadata:audio.onloadedmetadata, ontimeupdate:audio.ontimeupdate};
+let ytp = null, ytTimer = 0, pending = null, playToken = 0;
+const shim = {
+  get paused(){ return !ytp || !ytp.getPlayerState || ytp.getPlayerState() !== 1; },
+  get duration(){ return ytp && ytp.getDuration ? ytp.getDuration() : 0; },
+  get currentTime(){ return ytp && ytp.getCurrentTime ? ytp.getCurrentTime() : 0; },
+  set currentTime(v){ if(ytp && ytp.seekTo) ytp.seekTo(v, true); },
+  set volume(v){ if(ytp && ytp.setVolume) ytp.setVolume(v * 100); },
+  play(){ if(ytp && ytp.playVideo) ytp.playVideo(); return Promise.resolve(); },
+  pause(){ if(ytp && ytp.pauseVideo) ytp.pauseVideo(); }
+};
+window.onYouTubeIframeAPIReady = () => { if(pending){ const f = pending; pending = null; f(); } };
+function setEngine(e){ audio = e; e.volume = $("vol").value / 100; $("ytBox").hidden = e !== shim; }
+function onYT(e){
+  clearInterval(ytTimer);
+  if(e.data === 1){ handlers.onloadedmetadata(); handlers.onplay(); ytTimer = setInterval(() => handlers.ontimeupdate(), 400); }
+  else if(e.data === 2) handlers.onpause();
+  else if(e.data === 0) handlers.onended();
+}
+function note(t){
+  const n = $("npNote"); n.hidden = false;
+  n.textContent = t.yt ? "YouTube • durasi penuh" : t.local ? "File sendiri • durasi penuh" : "Preview 30 detik • durasi asli " + fmt((t.trackTimeMillis||0)/1000);
+}
+/* ---------- Cari video YouTube otomatis ---------- */
+const PIPED = ["https://pipedapi.kavin.rocks", "https://api.piped.private.coffee", "https://pipedapi.adminforge.de", "https://pipedapi.leptons.xyz"];
+async function tfetch(url, ms = 5000){
+  const c = new AbortController(), id = setTimeout(() => c.abort(), ms);
+  try{ return await (await fetch(url, {signal: c.signal})).json(); } finally{ clearTimeout(id); }
+}
+async function findYT(t){
+  const q = clean(t.artistName) + " " + clean(t.trackName), want = (t.trackTimeMillis || 0) / 1000;
+  if(CONFIG.ytApiKey){
+    try{
+      const d = await tfetch("https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&videoEmbeddable=true&maxResults=1&key=" + CONFIG.ytApiKey + "&q=" + enc(q));
+      if(d.items && d.items[0]) return d.items[0].id.videoId;
+    }catch(e){}
+  }
+  for(const base of PIPED){
+    try{
+      const d = await tfetch(base + "/search?filter=videos&q=" + enc(q));
+      const v = (d.items || []).filter(x => x.url && x.duration > 0);
+      if(!v.length) continue;
+      const pick = want ? v.slice(0, 8).sort((a, b) => Math.abs(a.duration - want) - Math.abs(b.duration - want))[0] : v[0];
+      const m = pick.url.match(/v=([\w-]{11})/);
+      if(m) return m[1];
+    }catch(e){}
+  }
+  return null;
+}
+async function playTrack(t){
+  const my = ++playToken;
+  realAudio.pause(); if(ytp && ytp.pauseVideo) ytp.pauseVideo();
+  if(!t.yt && !t.local){
+    $("npNote").hidden = false; $("npNote").textContent = "Mencari versi penuh…";
+    t.yt = await findYT(t);
+  }
+  if(my !== playToken) return;
+  note(t);
+  if(t.yt) return playYT(t);
+  setEngine(realAudio); realAudio.src = t.previewUrl; realAudio.play().catch(()=>{});
+}
+function playYT(t){
+  setEngine(shim);
+  const go = () => {
+    if(ytp && ytp.loadVideoById) return ytp.loadVideoById(t.yt);
+    ytp = new YT.Player("ytFrame", {videoId: t.yt, width: "100%", height: "100%", playerVars: {autoplay: 1, playsinline: 1, rel: 0}, events: {onReady: e => { e.target.setVolume($("vol").value); e.target.playVideo(); }, onStateChange: onYT}});
+  };
+  if(window.YT && YT.Player) return go();
+  pending = go;
+  if(!document.getElementById("yta")){ const sc = document.createElement("script"); sc.id = "yta"; sc.src = "https://www.youtube.com/iframe_api"; document.head.appendChild(sc); }
+}
+$("ytBtn").onclick = async () => {
+  const u = prompt("Tempel link YouTube lagunya:"); if(!u) return;
+  const m = u.match(/(?:v=|youtu\.be\/|shorts\/|embed\/)([\w-]{11})/);
+  if(!m) return alert("Link YouTube tidak valid.");
+  let title = "Video YouTube", author = "YouTube", thumb = "";
+  try{ const d = await (await fetch("https://www.youtube.com/oembed?format=json&url=" + enc("https://www.youtube.com/watch?v=" + m[1]))).json(); title = d.title; author = d.author_name; thumb = d.thumbnail_url; }catch(e){}
+  localTracks = localTracks.filter(x => x.yt !== m[1]);
+  localTracks.unshift({trackId: "yt" + m[1], trackName: title, artistName: author.replace(/ - Topic$/, ""), artworkUrl100: thumb, yt: m[1], previewUrl: ""});
+  tracks = [...localTracks, ...tracks.filter(x => !x.local && !x.yt)];
+  idx = -1; render(); load(0);
+};
+
+/* ---------- Putar MP3 sendiri ---------- */
+$("upBtn").onclick = () => $("upFile").click();
+$("upFile").onchange = e => {
+  Array.from(e.target.files).forEach(f => localTracks.unshift({
+    trackId: "local" + f.name + f.size, trackName: f.name.replace(/\.[^.]+$/, ""),
+    artistName: "File sendiri", artworkUrl100: "", previewUrl: URL.createObjectURL(f), local: true
+  }));
+  tracks = [...localTracks, ...tracks.filter(t => !t.local && !t.yt)];
+  idx = -1; render(); if(e.target.files.length) load(0);
+  e.target.value = "";
+};
+
+/* ---------- Navigasi & pencarian ---------- */
+let timer;
+$("q").addEventListener("input", e => { clearTimeout(timer); const v = e.target.value.trim(); timer = setTimeout(() => search(v || CONFIG.defaultQuery), 450); });
+document.querySelectorAll(".nav button").forEach(b => b.onclick = () => {
+  document.querySelectorAll(".nav button").forEach(x => x.classList.toggle("on", x === b));
+  $("q").value = ""; search(b.dataset.q);
+});
+$("tabHome").onclick = () => { $("app").classList.remove("show-np"); $("tabHome").classList.add("on"); $("tabNp").classList.remove("on"); };
+$("tabNp").onclick = () => { $("app").classList.add("show-np"); $("tabNp").classList.add("on"); $("tabHome").classList.remove("on"); };
+if("mediaSession" in navigator){ navigator.mediaSession.setActionHandler("play", () => audio.play()); navigator.mediaSession.setActionHandler("pause", () => audio.pause()); navigator.mediaSession.setActionHandler("nexttrack", () => step(1)); navigator.mediaSession.setActionHandler("previoustrack", () => step(-1)); }
+document.addEventListener("keydown", e => { if(e.code === "Space" && e.target.tagName !== "INPUT" && e.target.tagName !== "TEXTAREA"){ e.preventDefault(); $("play").click(); } });
+
+/* ---------- Layar pembuka: ketuk pintu ---------- */
+$("gateName").textContent = CONFIG.welcomeName;
+(function loadGateImages(){
+  const [a, b] = CONFIG.gateImages || []; if(!a || !b) return;
+  const ia = new Image(), ib = new Image(); let n = 0;
+  const done = () => { if(++n < 2) return; $("imgClosed").src = a; $("imgOpen").src = b; $("imgClosed").hidden = $("imgOpen").hidden = false; $("gate").classList.add("photo"); };
+  ia.onload = ib.onload = done; ia.src = a; ib.src = b;
+})();
+function knock(){
+  try{
+    const c = new (window.AudioContext || window.webkitAudioContext)();
+    [0, .2, .4].forEach(d => {
+      const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + d;
+      o.type = "sine"; o.frequency.setValueAtTime(140, t); o.frequency.exponentialRampToValueAtTime(45, t + .12);
+      g.gain.setValueAtTime(.9, t); g.gain.exponentialRampToValueAtTime(.001, t + .2);
+      o.connect(g); g.connect(c.destination); o.start(t); o.stop(t + .22);
+    });
+  }catch(e){}
+}
+let gateBusy = false;
+$("gate").onclick = () => {
+  if(gateBusy) return; gateBusy = true;
+  const g = $("gate"), d = $("door"); knock(); d.classList.add("shake");
+  setTimeout(() => { d.classList.remove("shake"); d.classList.add("open"); }, 750);
+  setTimeout(() => g.classList.add("out"), 1900);
+  setTimeout(() => g.remove(), 3100);
+};
+
+search(CONFIG.defaultQuery);
+</script>
+</body>
+</html>
