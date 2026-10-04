@@ -1,0 +1,22 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><meta name="theme-color" content="#000000"><title>Cek Khodam</title><link rel="stylesheet" href="style.css"></head><body><div class="wrap">
+<a class="back" href="index.html">← Semua Tools</a>
+<h1>👻 Cek Khodam</h1><p class="sub">Masukkan namamu, lalu lihat khodam yang menemanimu.</p>
+<div class="card" id="form"><label for="n">Nama</label><input id="n" maxlength="30" placeholder="Contoh: Budi" autocomplete="off"><button class="btn" id="go">Cek Sekarang</button></div>
+<div class="card load hide" id="load"><div class="spin"></div><div id="msg">Memulai…</div><div class="bar"><i id="fill"></i></div></div>
+<div class="card hide" id="out"><div class="res"><div class="pill" id="who"></div><div class="big" id="kh"></div><div class="pill" id="pw"></div><div class="pill" id="el"></div><p class="desc" id="ds"></p></div><button class="btn ghost" id="again">Cek Nama Lain</button></div>
+<p class="note">Hanya untuk hiburan. Hasil dibuat acak dari namamu, bukan ramalan sungguhan.</p></div>
+<script>
+const $=i=>document.getElementById(i);
+const K=[["Macan Putih","Auranya bikin orang segan, tapi aslinya suka tidur siang."],["Sandal Jepit Kiri","Setia menemani ke mana pun, meski sering hilang di masjid."],["Kulkas Dua Pintu","Dingin di luar, penuh isi di dalam, selalu jadi tempat curhat."],["Naga Wifi","Sinyalnya kuat saat kamu tidak butuh, ngilang saat butuh."],["Kucing Oren","Berisik, lapar terus, tapi disayang semua orang."],["Burung Hantu Begadang","Paling melek jam 2 pagi dan paling ngantuk saat rapat."],["Ayam Jago Subuh","Bangun duluan, bikin satu RT ikut bangun."],["Harimau Kantoran","Garang di grup chat, jinak di depan bos."],["Kodok Sakti","Kecil tapi lompatannya jauh, rezeki datang tiba-tiba."],["Singa Mager","Punya kekuatan besar, tapi malas kalau belum makan."],["Panda Santuy","Hidup tenang, makan teratur, masalah dibiarkan lewat."],["Elang Rebahan","Pandangannya tajam, tapi dari atas kasur."],["Kelinci Turbo","Gesit kalau ada diskon dan promo gratis ongkir."],["Rubah Ekor Sembilan","Cerdas dan licin, selalu menemukan jalan keluar."]];
+const E=["Api","Air","Angin","Tanah","Petir","Bayangan","Cahaya"];
+function h(s){let x=2166136261;for(const c of s.toLowerCase().trim()){x^=c.charCodeAt(0);x=Math.imul(x,16777619)}return x>>>0}
+const steps=["Membaca nama…","Menyelaraskan aura…","Memanggil khodam…","Menghitung kekuatan…"];
+function go(){
+ const n=$("n").value.trim(); if(!n){$("n").focus();return}
+ const v=h(n); $("form").classList.add("hide"); $("load").classList.remove("hide"); let i=0;
+ const t=setInterval(()=>{ $("msg").textContent=steps[i%steps.length]; $("fill").style.width=Math.min(100,(i+1)*25)+"%"; i++; if(i>4){clearInterval(t);
+  setTimeout(()=>{ const k=K[v%K.length]; $("who").textContent=n; $("kh").textContent=k[0]; $("pw").textContent="Kekuatan "+(50+(v>>>8)%50)+"%"; $("el").textContent="Elemen "+E[(v>>>16)%E.length]; $("ds").textContent=k[1]; $("load").classList.add("hide"); $("out").classList.remove("hide"); $("fill").style.width="0"; },500);} },700);
+}
+$("go").onclick=go; $("n").addEventListener("keydown",e=>{if(e.key==="Enter")go()});
+$("again").onclick=()=>{$("out").classList.add("hide");$("form").classList.remove("hide");$("n").value="";$("n").focus()};
+</script></body></html>

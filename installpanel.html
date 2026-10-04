@@ -1,0 +1,54 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><meta name="theme-color" content="#000000"><title>Install Panel</title><link rel="stylesheet" href="style.css">
+<style>
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.warn{background:#2a2112;border:1px solid #5a4516;color:#e7c67a;border-radius:10px;padding:10px 12px;font-size:13px;line-height:1.5;margin-bottom:14px}
+.term{margin-top:14px;background:#070b11;border-radius:12px;padding:12px;height:46vh;overflow:auto;font:12px/1.55 Consolas,monospace;word-break:break-word;white-space:pre-wrap}
+.term .success{color:#4ade80}.term .error{color:#f87171}.term .warning{color:#fbbf24}.term .info{color:#b0cce8}
+.stat{display:flex;gap:8px;align-items:center;margin-top:12px;font-size:13px;color:var(--muted)}
+.dot{width:10px;height:10px;border-radius:50%;background:#4a5b73}.dot.run{background:#facc15}.dot.ok{background:#22c55e}.dot.bad{background:#ef4444}
+.btn:disabled{opacity:.5}
+</style></head><body><div class="wrap">
+<a class="back" href="index.html">← Semua Tools</a>
+<h1>🖥️ Install Panel</h1><p class="sub">Install Pterodactyl Panel + Wings + Node otomatis lewat SSH.</p>
+<div class="warn">Pakai hanya untuk VPS milikmu sendiri (Ubuntu/Debian baru, belum ada panel). Password root dikirim ke server installer-mu, jadi pakai alamat <b>https</b> dan server yang kamu kontrol.</div>
+<div class="card" id="form">
+ <label for="api">Alamat API installer</label><input id="api" placeholder="https://api.domainmu.com" autocomplete="off">
+ <label for="token">Token API</label><input id="token" type="password" placeholder="API_TOKEN dari server" autocomplete="off">
+ <label for="ip">IP VPS</label><input id="ip" placeholder="192.168.1.100" autocomplete="off">
+ <label for="pw">Password root VPS</label><input id="pw" type="password" autocomplete="off">
+ <label for="dp">Domain panel</label><input id="dp" placeholder="panel.domain.com" autocomplete="off">
+ <label for="dn">Domain node</label><input id="dn" placeholder="node.domain.com" autocomplete="off">
+ <label for="ram">RAM server (MB)</label><input id="ram" type="number" inputmode="numeric" placeholder="4096">
+ <div class="row2"><div><label for="user">Username panel</label><input id="user" placeholder="admin" autocomplete="off"></div><div><label for="pass">Password panel</label><input id="pass" type="password" placeholder="min 8 karakter" autocomplete="off"></div></div>
+ <label for="mail">Email panel</label><input id="mail" type="email" placeholder="admin@domain.com" autocomplete="off">
+ <button class="btn" id="go">Mulai Instalasi</button>
+ <div class="stat"><span class="dot" id="dot"></span><span id="st">Siap untuk instalasi</span></div>
+</div>
+<div class="term hide" id="term"></div>
+<p class="note">Estimasi 10 sampai 30 menit. Jangan tutup halaman selama proses berjalan.</p></div>
+<script>
+const $=i=>document.getElementById(i);
+let es=null,busy=false;
+["api","token"].forEach(k=>{try{$(k).value=localStorage.getItem("ip_"+k)||""}catch(e){}});
+function status(c,t){$("dot").className="dot "+c;$("st").textContent=t}
+function log(type,msg){const t=$("term");t.classList.remove("hide");const d=document.createElement("div");d.className=type;d.textContent=msg;t.appendChild(d);t.scrollTop=t.scrollHeight}
+function finish(ok,t){busy=false;$("go").disabled=false;status(ok?"ok":"bad",t);if(es){es.close();es=null}}
+$("go").onclick=async()=>{
+ if(busy)return;
+ const api=$("api").value.trim().replace(/\/$/,""),token=$("token").value.trim();
+ const body={ipVps:$("ip").value.trim(),pwVps:$("pw").value,domainPanel:$("dp").value.trim(),domainNode:$("dn").value.trim(),ramServer:parseInt($("ram").value,10),usernamePanel:$("user").value.trim(),passwordPanel:$("pass").value,gmailPanel:$("mail").value.trim()};
+ if(!api||!token||Object.values(body).some(v=>!v))return alert("Semua kolom wajib diisi.");
+ try{localStorage.setItem("ip_api",api);localStorage.setItem("ip_token",token)}catch(e){}
+ busy=true;$("go").disabled=true;$("term").innerHTML="";status("run","Menghubungi server…");
+ try{
+  const r=await fetch(api+"/api/install",{method:"POST",headers:{"Content-Type":"application/json","x-token":token},body:JSON.stringify(body)});
+  const j=await r.json(); if(!r.ok)throw new Error(j.message||"Gagal memulai");
+  status("run","Instalasi berjalan…");log("info","Instalasi dimulai (ID "+j.id+")");
+  es=new EventSource(api+"/api/stream/"+j.id+"?token="+encodeURIComponent(token));
+  es.addEventListener("log",e=>{const d=JSON.parse(e.data);log(d.type,d.message)});
+  es.addEventListener("done",e=>{const d=JSON.parse(e.data).data||{};log("success","SELESAI");log("success","Panel : https://"+d.domain_panel);log("success","Node  : https://"+d.domain_node);log("success","User  : "+d.username+" (password sesuai yang kamu isi)");if(d.api_key){log("success","API Key (ptla): "+d.api_key);const b=document.createElement("button");b.className="btn ghost";b.textContent="Salin API Key";b.onclick=()=>navigator.clipboard.writeText(d.api_key).then(()=>b.textContent="Tersalin ✅");$("term").appendChild(b)}else log("warning","API Key tidak terbuat otomatis, buat manual di Admin → Application API");finish(true,"Instalasi selesai ✅")});
+  es.addEventListener("fail",e=>{log("error",JSON.parse(e.data).message);finish(false,"Instalasi gagal ❌")});
+  es.onerror=()=>{if(es&&es.readyState===2)finish(false,"Koneksi terputus")};
+ }catch(err){log("error",err.message);finish(false,"Gagal memulai ❌")}
+};
+</script></body></html>

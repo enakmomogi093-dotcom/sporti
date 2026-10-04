@@ -1,0 +1,23 @@
+<!DOCTYPE html><html lang="id"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no"><meta name="theme-color" content="#000000"><title>Cek Kecocokan Jodoh</title><link rel="stylesheet" href="style.css"></head><body><div class="wrap">
+<a class="back" href="index.html">← Semua Tools</a>
+<h1>💘 Cek Kecocokan Jodoh</h1><p class="sub">Masukkan nama kamu dan nama pasanganmu.</p>
+<div class="card" id="form"><label for="a">Namamu</label><input id="a" maxlength="30" placeholder="Contoh: Budi" autocomplete="off"><label for="b">Nama pasangan</label><input id="b" maxlength="30" placeholder="Contoh: Siti" autocomplete="off"><button class="btn" id="go">Cek Kecocokan</button></div>
+<div class="card load hide" id="load"><div class="heart">💗</div><div id="msg">Memulai…</div><div class="bar"><i id="fill"></i></div></div>
+<div class="card hide" id="out"><div class="res"><div class="pill" id="who"></div><div class="big" id="pc"></div><div class="big" id="vd" style="font-size:24px"></div><p class="desc" id="ds"></p></div><button class="btn ghost" id="again">Cek Lagi</button></div>
+<p class="note">Hanya untuk hiburan. Hasil dibuat dari nama, bukan penilaian hubungan sungguhan.</p></div>
+<script>
+const $=i=>document.getElementById(i);
+function h(s){let x=2166136261;for(const c of s){x^=c.charCodeAt(0);x=Math.imul(x,16777619)}return x>>>0}
+const steps=["Membaca kedua nama…","Mencocokkan huruf…","Menghitung chemistry…","Mengintip takdir…","Menyusun hasil…"];
+const V=[[80,"COCOK BANGET 💖","Kalian terlihat serasi. Tinggal jaga komunikasi dan jangan gengsi."],[60,"COCOK 💕","Peluangnya bagus. Sedikit usaha dan saling mengerti akan membuatnya makin dekat."],[40,"LUMAYAN 🤔","Ada beberapa perbedaan, tapi masih bisa dijembatani lewat ngobrol terbuka."],[0,"KURANG COCOK 💔","Hasilnya rendah, tapi ini cuma hitungan nama. Hubungan nyata ditentukan oleh kalian."]];
+function go(){
+ const a=$("a").value.trim(), b=$("b").value.trim();
+ if(!a){$("a").focus();return} if(!b){$("b").focus();return}
+ const p=h([a,b].map(x=>x.toLowerCase()).sort().join("&"))%101;
+ $("form").classList.add("hide"); $("load").classList.remove("hide"); let i=0;
+ const t=setInterval(()=>{ $("msg").textContent=steps[i]; i++; $("fill").style.width=(i/steps.length*100)+"%"; if(i>=steps.length){clearInterval(t);
+  setTimeout(()=>{ const v=V.find(x=>p>=x[0]); $("who").textContent=a+" ❤ "+b; $("pc").textContent=p+"%"; $("vd").textContent=v[1]; $("ds").textContent=v[2]; $("load").classList.add("hide"); $("out").classList.remove("hide"); $("fill").style.width="0"; },500);} },700);
+}
+$("go").onclick=go; document.querySelectorAll("input").forEach(e=>e.addEventListener("keydown",k=>{if(k.key==="Enter")go()}));
+$("again").onclick=()=>{$("out").classList.add("hide");$("form").classList.remove("hide");$("a").value=$("b").value="";$("a").focus()};
+</script></body></html>
